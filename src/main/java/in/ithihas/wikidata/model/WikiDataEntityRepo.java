@@ -54,12 +54,15 @@ public interface WikiDataEntityRepo extends JpaRepository<WikiDataEntity, String
 
 	@Transactional
 	@Modifying
-	@Query(value = "update wikidata.entity_articles set reign1 = :reign1 where entity_id = :entity_id", nativeQuery = true)
-	public List<WikiDataEntity> updateReign1ForEntityId(@Param("entity_id") String entityId, 
-			  										  @Param("reign1") String reign1);
+	@Query(value = "update wikidata.entity_articles set reign1 = :reign1, reign_start = :reign_start, reign_end = :reign_end where entity_id = :entity_id", nativeQuery = true)
+	public int updateReignForEntityId(@Param("entity_id") String entityId, 
+			  										  @Param("reign1") String reign1,
+			  										  @Param("reign_start") String reignStart, 
+			  										  @Param("reign_end") String reignEnd);
+	
 
-
-	@Query(value = "select * from wikidata.entity_articles where reign1 IS NULL", 
+	//find all entities which have not been processed and reign_string was found. 
+	@Query(value = "select * from wikidata.entity_articles where reign1 IS NULL and not (reign_string like 'Not found%') ", 
 		   nativeQuery = true)
 	public List<WikiDataEntity> findAllWithNullReign1(); 
 	

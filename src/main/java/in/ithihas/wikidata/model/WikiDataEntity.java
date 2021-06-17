@@ -45,6 +45,14 @@ public class WikiDataEntity {
 	@Column()
 	private Byte reignPattern; 
 	
+	public Byte getReignPattern() {
+		return reignPattern;
+	}
+
+	public void setReignPattern(Byte reignPattern) {
+		this.reignPattern = reignPattern;
+	}
+
 	public String getIntroSection() {
 		return introSection;
 	}

@@ -69,4 +69,18 @@ public class DataWikiController {
 					 .body(new ApiResponse(false, "Invalid count.")); 
 		}
 	}
+	
+	@PutMapping(produces="application/json", path="/setReign")
+	@ResponseBody
+	public ResponseEntity<?> setReign(@RequestParam(value="count", required=true) int count) throws Exception {
+		if(count > 0) {
+			int entitiesUpdated = dataWikiService.processReignString(count); 
+			String msg = String.format("%d entities updated.", entitiesUpdated); 
+			return ResponseEntity.ok().body(new ApiResponse(true, msg)); 
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+					 .body(new ApiResponse(false, "Invalid count.")); 
+		}
+	}
 }
