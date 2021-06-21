@@ -213,34 +213,31 @@ public class DataWikiService {
 
 	@Transactional
 	int processReignString(int count) throws Exception {
-		int rowsUpdated = 0, i = 0;
+		int rowsUpdated = 0, i = 0, updateCount = 0;
 		List<WikiDataEntity> entities = wikiDataEntityRepo.findAllWithNullReign1();
-		ReignDto reign; 
+		ReignDto reign;
 
 		for (WikiDataEntity entity : entities) {
 			if (entity.getReign1() == null) {
 				String reign1 = patternService.cleanupReignString(entity.getReignString());
 				if (reign1 != null) {
-					log.info("Original  : {}", entity.getReignString());
-					log.info("Cleaned up: {}", reign1);
-					
-					//for now we are proceesing only pattern 2, which is something like: 10 August 1200 - 31 November 1231 CE or 1200 - 1231
-					if(entity.getReignPattern() == 2) { 
+					// for now we are proceesing only pattern 2, which is something like: 10 August
+					// 1200 - 31 November 1231 CE or 1200 - 1231
+					if (entity.getReignPattern() == 2) {
 						reign = this.extractReignFromReignString(2, reign1);
-						if(reign == null) {
-							reign = this.extractReignFromReignString(3, reign1); 
+						if (reign == null) {
+							reign = this.extractReignFromReignString(3, reign1);
 						}
-						if(reign != null) {
-							log.info("Start: {}, End: {}, No. found: start {}: end {}", 
-										reign.getStart(), reign.getEnd(), reign.getStartCount(), reign.getEndCount() );
+						if (reign != null && reign.getStartCount() == 1 && reign.getEndCount() == 1) {
+							updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1,
+									reign.getStart(), reign.getEnd(), "Found");
+						} else {
+							log.info("Reign not found for: {}", reign1);
+							updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1, null,
+									null, "Not found");
 						}
-						
 					}
-					
-					// int updateCount =
-					// wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1,
-					// reign.getStart(), reign.getEnd());
-					int updateCount = 1;
+
 					if (updateCount == 1) {
 						rowsUpdated++;
 						// log.info("Reign string updated for {}.", entity.getLabelEn());
@@ -249,7 +246,7 @@ public class DataWikiService {
 					}
 					i++;
 
-					if (i % 10 == 0) {
+					if (i % 50 == 0) {
 						log.info("{} entities processed.", i);
 					}
 					if (i >= count) {
@@ -265,44 +262,150 @@ public class DataWikiService {
 
 	public ReignDto extractReignFromReignString(int patternType, String reignString) {
 		Pattern pattern = null;
-		if(patternType==2) {
-			pattern = patternService.getDatePattern2();
+		if (patternType == 2) {
+			pattern = patternService.getDmyDatePattern();
 		}
-		else if(patternType==3) {
-			pattern = patternService.getDatePattern3(); 
-		}
-		
+
 		String reignStart = null, reignEnd = null;
-		//if multiple pairs of reign start and end are found, the number is counted. 
-		int reignStartCount=0, reignEndCount=0; 
+		// if multiple pairs of reign start and end are found, the number is counted.
+		int reignStartCount = 0, reignEndCount = 0;
 		Matcher matcher = pattern.matcher(reignString);
-		
+
 		// First occurrence of inner pattern for date will be reignStart
-		while(matcher.find()) {
-			if(patternType==2) {
-				reignStartCount++; 
+		while (matcher.find()) {
+			if (patternType == 2) {
+				reignStartCount++;
 				reignStart = reignString.substring(matcher.start(), matcher.end()).trim();
 				// 2nd occurrence if found, will be reignEnd
 				if (matcher.find()) {
 					reignEndCount++;
 					reignEnd = reignString.substring(matcher.start(), matcher.end()).trim();
 				}
-			}
-			else if(patternType==3) {
-				reignStartCount++; reignEndCount++; 
+			} else if (patternType == 3) {
+				reignStartCount++;
+				reignEndCount++;
 				String reignInYears = reignString.substring(matcher.start(), matcher.end()).trim();
-				String[] reignYears = reignInYears.split("-"); 
-				if(reignYears.length==2) {
-					reignStart = reignYears[0]; 
-					reignEnd = reignYears[1]; 
+				String[] reignYears = reignInYears.split("-");
+				if (reignYears.length == 2) {
+					log.info("reignYears: {}, {}", reignYears[0], reignYears[1]);
+					reignStart = reignYears[0].split("\\s+")[0];
+					Matcher numberMatcher = patternService.getNumberPattern().matcher(reignYears[1]);
+					if (numberMatcher.find()) {
+						reignEnd = numberMatcher.group();
+					}
+				}
+			}
+		}
+		if (reignStartCount > 0 && reignEndCount > 0) {
+			log.info("Start: {}, End: {}", reignStart, reignEnd);
+			return new ReignDto(reignStart, reignEnd, reignStartCount, reignEndCount);
+		}
+		log.info("Pattern {} date not found.", patternType);
+		return null;
+	}
+
+	@Transactional
+	int setReign(int count) throws Exception {
+		int rowsUpdated = 0, i = 0;
+		List<WikiDataEntity> entities = wikiDataEntityRepo.findAllWithNullReign1();
+		ReignDto reign;
+
+		for (WikiDataEntity entity : entities) {
+			if (entity.getReign1() == null) {
+				int k = this.updateReignForEntity(entity);
+				i++;
+				rowsUpdated += k;
+				if (i % 50 == 0) {
+					log.info("{} entities processed.", i);
+				}
+				if (i >= count) {
+					return rowsUpdated;
 				}
 			}
 		}
 
-		if(reignStartCount>0 && reignEndCount>0) {
-			return new ReignDto(reignStart, reignEnd, reignStartCount, reignEndCount);
-		}
-		return null; 
+		return rowsUpdated;
+	}
 
+	public int setReignForEntityId(String entityId) {
+		Optional<WikiDataEntity> oEntity = wikiDataEntityRepo.findByEntityId(entityId);
+		if (oEntity.isPresent()) {
+			WikiDataEntity entity = oEntity.get();
+			return updateReignForEntity(entity);
+		} else
+			return -1;
+	}
+
+	public int updateReignForEntity(WikiDataEntity entity) {
+		int updateCount = 0;
+		String reignStart = null, reignEnd = null;
+		String reign1 = patternService.cleanupReignString(entity.getReignString());
+		if (reign1 != null) {
+			// for now we are proceesing only pattern 2, which is something like: 10 August
+			// 1200 - 31 November 1231 CE or 1200 - 1231
+			String[] segments = reign1.split("-");
+			if (segments.length == 2) {
+				reignStart = this.extractDateFromSegment(segments[0]);
+				reignEnd = this.extractDateFromSegment(segments[1]);
+			}
+
+			if (reignStart != null && reignEnd != null) {
+				if(reign1.length()>255) {
+					reign1 = reign1.substring(0,255); 
+				}
+				if(reignStart.length()>255) {
+					reignStart = reignStart.substring(0,255); 
+				}
+				if(reignEnd.length()>255) {
+					reignEnd = reignEnd.substring(0,255); 
+				}
+
+				updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1, reignStart,
+																		reignEnd, "Found");
+				return updateCount;
+			}
+		}
+		log.info("Reign not found for: {}", reign1);
+		if(reign1.length()>255) {
+			reign1 = reign1.substring(0,255); 
+		}
+		updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1, null, null, "Not found");
+		return updateCount;
+	}
+
+	// look for full 'dmy' format, if not then 'mdy', then 'my' and if not just 'y' and return
+	// matched date
+	public String extractDateFromSegment(String input) {
+		Matcher matcher = patternService.getDmyDatePattern().matcher(input);
+		String date = null;
+		if (matcher.find()) {
+			date = matcher.group();
+			return date;
+		}
+
+		matcher = patternService.getMdyDatePattern().matcher(input);
+		date = null;
+		if (matcher.find()) {
+			date = matcher.group();
+			return date;
+		}
+		
+		matcher = patternService.getMyDatePattern().matcher(input);
+		if (matcher.find()) {
+			date = matcher.group();
+			return date;
+		}
+
+		matcher = patternService.getyDatePattern().matcher(input);
+		if (matcher.find()) {
+			String tempDate = matcher.group();
+			Matcher numberMatcher = patternService.getNumberPattern().matcher(tempDate);
+			if (numberMatcher.find()) {
+				date = numberMatcher.group();
+			}
+			return date;
+		}
+
+		return null;
 	}
 }

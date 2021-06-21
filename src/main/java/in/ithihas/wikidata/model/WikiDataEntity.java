@@ -45,6 +45,17 @@ public class WikiDataEntity {
 	@Column()
 	private Byte reignPattern; 
 	
+	@Column()
+	private String status; 
+	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
 	public Byte getReignPattern() {
 		return reignPattern;
 	}

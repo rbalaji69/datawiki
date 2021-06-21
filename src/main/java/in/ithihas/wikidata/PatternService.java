@@ -17,11 +17,18 @@ public class PatternService {
 	private static Pattern reignPattern2 = Pattern.compile("reign\\s*=\\s*[^\\|]*\\|"); 
 	private static Pattern innerPattern1 = Pattern.compile("\\{\\{[a-zA-Z0-9\\|\\s\\\\]*\\}\\}");
 	
-	//pattern 2, which is something like: 10 August 1200 - 31 November 1231 CE
-	private static Pattern datePattern2 = Pattern.compile("[0-9]{1,3}[\\s]+[a-zA-Z]+[\\s]+[0-9]{1,5}[\\s]*[BCE]*"); 
+	//pattern 2, which is something like: 10 August 1200
+	private static Pattern dmyDatePattern = Pattern.compile("[0-9]{1,3}[\\s]+[a-zA-Z]+[\\s]+[0-9]{1,5}[\\s]*[BCE]*"); 
+	
+	//mdy pattern like: August 10, 1200
+	private static Pattern mdyDatePattern = Pattern.compile("[a-zA-Z]+[\\s]+[0-9]{1,3}[,]*[\\s]+[0-9]{1,5}[\\s]*[BCE]*"); 
+	private static Pattern myDatePattern = Pattern.compile("[a-zA-Z]+[\\s]+[0-9]{1,5}[\\s]*[BCE]*"); 
+	private static Pattern yDatePattern = Pattern.compile("[0-9]{1,5}[\\s]*[BCE]*"); 
 	
 	//patter 3 has only the year, something like: 1200 - 1231
 	private static Pattern datePattern3 = Pattern.compile("[0-9]{1,5}[\\s]*-[\\s]*[0-9]{1,5}[\\s]*[BCE]*"); 
+	
+	private static Pattern numberPattern = Pattern.compile("\\d+"); 
 	
 	//private Matcher matcher; 
 	
@@ -53,12 +60,25 @@ public class PatternService {
 		return innerPattern1;
 	}
 
-	public Pattern getDatePattern2() {
-		return datePattern2;
+	public Pattern getDmyDatePattern() {
+		return dmyDatePattern;
 	}
 
-	public Pattern getDatePattern3() {
-		return datePattern3;
+	public Pattern getMyDatePattern() {
+		return myDatePattern;
+	}
+	
+	
+	public Pattern getNumberPattern() {
+		return numberPattern; 
+	}
+
+	public Pattern getyDatePattern() {
+		return yDatePattern;
+	}
+
+	public Pattern getMdyDatePattern() {
+		return mdyDatePattern;
 	}
 	
 	

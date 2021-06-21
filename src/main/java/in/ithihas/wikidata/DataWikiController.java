@@ -74,7 +74,7 @@ public class DataWikiController {
 	@ResponseBody
 	public ResponseEntity<?> setReign(@RequestParam(value="count", required=true) int count) throws Exception {
 		if(count > 0) {
-			int entitiesUpdated = dataWikiService.processReignString(count); 
+			int entitiesUpdated = dataWikiService.setReign(count); 
 			String msg = String.format("%d entities updated.", entitiesUpdated); 
 			return ResponseEntity.ok().body(new ApiResponse(true, msg)); 
 		}
@@ -82,5 +82,23 @@ public class DataWikiController {
 			return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
 					 .body(new ApiResponse(false, "Invalid count.")); 
 		}
+	}
+	
+	@PutMapping(produces="application/json", path="/setReignForEntity")
+	@ResponseBody
+	public ResponseEntity<?> setReignForEntity(@RequestParam(value="id", required=true) String id) throws Exception {
+		
+			int entitiesUpdated = dataWikiService.setReignForEntityId(id); 
+			String msg = null;
+			
+			if(entitiesUpdated==1) {
+				msg = String.format("%d entity updated.", entitiesUpdated); 
+				return ResponseEntity.ok().body(new ApiResponse(true, msg)); 
+			}
+			else {
+				msg = "Entity not found."; 
+				return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+						 .body(new ApiResponse(false, "Invalid count.")); 
+			}
 	}
 }
