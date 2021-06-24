@@ -49,7 +49,9 @@ public class PatternService {
 		int equalsIndex = reignString.indexOf('='); 
 		if(equalsIndex>=0) {
 			result = reignString.substring(equalsIndex+1).trim(); 
-			result = result.replace("\\u2013", "-").replace("&nbsp", " ").replace("\\n", " ").replace(';', ' '); 
+			result = result.replace("\\u2013", "-").replace("&ndash", "-")
+							.replace("{{spaced ndash}}", "-").replace("{{snd}}", "-")
+							.replace("&nbsp", " ").replace("\\n", " ").replace(';', ' '); 
 		}
 		
 		return result; 

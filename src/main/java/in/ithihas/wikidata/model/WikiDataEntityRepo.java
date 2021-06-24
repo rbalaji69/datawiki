@@ -63,7 +63,7 @@ public interface WikiDataEntityRepo extends JpaRepository<WikiDataEntity, String
 	
 
 	//find all entities which have not been processed and reign_string was found. 
-	@Query(value = "select * from wikidata.entity_articles where reign1 IS NULL and reign_pattern=2 ", 
+	@Query(value = "select * from wikidata.entity_articles where reign1 is null and reign_pattern =2 ", 
 		   nativeQuery = true)
 	public List<WikiDataEntity> findAllWithNullReign1(); 
 	

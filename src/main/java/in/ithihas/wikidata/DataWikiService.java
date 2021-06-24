@@ -140,7 +140,7 @@ public class DataWikiService {
 				}
 				i++;
 
-				if (i % 10 == 0) {
+				if (i % 50 == 0) {
 					log.info("{} entities processed.", i);
 				}
 				if (i >= count) {
@@ -297,7 +297,7 @@ public class DataWikiService {
 			}
 		}
 		if (reignStartCount > 0 && reignEndCount > 0) {
-			log.info("Start: {}, End: {}", reignStart, reignEnd);
+			// log.info("Start: {}, End: {}", reignStart, reignEnd);
 			return new ReignDto(reignStart, reignEnd, reignStartCount, reignEndCount);
 		}
 		log.info("Pattern {} date not found.", patternType);
@@ -340,40 +340,40 @@ public class DataWikiService {
 		int updateCount = 0;
 		String reignStart = null, reignEnd = null;
 		String reign1 = patternService.cleanupReignString(entity.getReignString());
-		if (reign1 != null) {
-			// for now we are proceesing only pattern 2, which is something like: 10 August
-			// 1200 - 31 November 1231 CE or 1200 - 1231
-			String[] segments = reign1.split("-");
-			if (segments.length == 2) {
-				reignStart = this.extractDateFromSegment(segments[0]);
-				reignEnd = this.extractDateFromSegment(segments[1]);
-			}
-
-			if (reignStart != null && reignEnd != null) {
-				if(reign1.length()>255) {
-					reign1 = reign1.substring(0,255); 
-				}
-				if(reignStart.length()>255) {
-					reignStart = reignStart.substring(0,255); 
-				}
-				if(reignEnd.length()>255) {
-					reignEnd = reignEnd.substring(0,255); 
-				}
-
-				updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1, reignStart,
-																		reignEnd, "Found");
-				return updateCount;
-			}
+		// for now we are proceesing only pattern 2, which is something like: 10 August
+		// 1200 - 31 November 1231 CE or 1200 - 1231
+		String[] segments = reign1.split("-");
+		if (segments.length == 2) {
+			reignStart = this.extractDateFromSegment(segments[0]);
+			reignEnd = this.extractDateFromSegment(segments[1]);
 		}
+
+		if (reignStart != null && reignEnd != null) {
+			if (reign1.length() > 255) {
+				reign1 = reign1.substring(0, 255);
+			}
+			if (reignStart.length() > 255) {
+				reignStart = reignStart.substring(0, 255);
+			}
+			if (reignEnd.length() > 255) {
+				reignEnd = reignEnd.substring(0, 255);
+			}
+
+			updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1, reignStart, reignEnd,
+					"Found");
+			return updateCount;
+		}
+		
 		log.info("Reign not found for: {}", reign1);
-		if(reign1.length()>255) {
-			reign1 = reign1.substring(0,255); 
+		if (reign1.length() > 255) {
+			reign1 = reign1.substring(0, 255);
 		}
 		updateCount = wikiDataEntityRepo.updateReignForEntityId(entity.getEntityId(), reign1, null, null, "Not found");
 		return updateCount;
 	}
 
-	// look for full 'dmy' format, if not then 'mdy', then 'my' and if not just 'y' and return
+	// look for full 'dmy' format, if not then 'mdy', then 'my' and if not just 'y'
+	// and return
 	// matched date
 	public String extractDateFromSegment(String input) {
 		Matcher matcher = patternService.getDmyDatePattern().matcher(input);
@@ -389,7 +389,7 @@ public class DataWikiService {
 			date = matcher.group();
 			return date;
 		}
-		
+
 		matcher = patternService.getMyDatePattern().matcher(input);
 		if (matcher.find()) {
 			date = matcher.group();
